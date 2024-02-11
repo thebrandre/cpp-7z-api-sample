@@ -1,0 +1,19 @@
+{
+  "name": "7zip-examples",
+  "version-string": "1.0.0",
+  "builtin-baseline": "7032c5759f823fc8699a5c37d5f7072464ccb9a8",
+  "dependencies": [
+    {
+      "name": "7zip",
+      "version>=": "23.01#2"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.2.1"
+    },
+    {
+      "name": "boost",
+      "version>=": "1.84.0"
+    }
+  ]
+}
