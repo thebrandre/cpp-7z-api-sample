@@ -1,30 +1,38 @@
 #include "InMemoryOutStream.h"
 
+#include <cassert>
 #include <span>
 #include <fmt/format.h>
 
-InMemoryOutStream::InMemoryOutStream(std::vector<std::byte>& Data): Data(&Data)
+InMemoryOutStream::InMemoryOutStream(std::vector<std::byte>& Data) : Data(&Data)
 {}
 
 InMemoryOutStream::~InMemoryOutStream() = default;
 
-Z7_COM7F_IMF(InMemoryOutStream::Write(const void* data, UInt32 size, UInt32* processedSize))
+static std::size_t writeBytesToBuffer(auto& Buffer, std::size_t Position, std::span<const std::byte> BytesToWrite)
 {
-	const auto BytesToWrite = static_cast<size_t>(size);
-	const auto OverWriteBytes = std::min(Data->size() - Position, BytesToWrite);
-	std::memcpy(Data->data() + Position, data, OverWriteBytes);
-	fmt::print("InMemoryOutStream::Write overwrite {} of {} bytes of current buffer of size {}.\n", OverWriteBytes, BytesToWrite, Data->size());
-	Position += OverWriteBytes;
-
-	const auto RemainingBytes = BytesToWrite - OverWriteBytes;
-	if (RemainingBytes != 0)
+	const auto BytesToOverwrite = BytesToWrite.subspan(0, std::min(std::ranges::size(Buffer) - Position, BytesToWrite.size()));
+	const auto BytesToAppend = BytesToWrite.subspan(BytesToOverwrite.size());
+	fmt::print("InMemoryOutStream::Write overwrite {} of {} bytes of current buffer of size {}.\n", BytesToOverwrite.size(), BytesToWrite.size(), std::ranges::size(Buffer));
+	const auto CurrentPositionIterator = std::ranges::copy(BytesToOverwrite, std::ranges::next(std::ranges::begin(Buffer), Position)).out;
+	if (!BytesToAppend.empty())
 	{
-		const auto RemainingBytesView = std::span{ static_cast<const std::byte*>(data) + OverWriteBytes, RemainingBytes };
-		Data->insert(Data->end(), RemainingBytesView.begin(), RemainingBytesView.end());
-		fmt::print("InMemoryOutStream::Write append remaining {} of {} bytes of current buffer of size {}.\n", RemainingBytes, BytesToWrite, Data->size());
-		Position = Data->size();
+		assert(CurrentPositionIterator == std::ranges::end(Buffer));
+		fmt::print("InMemoryOutStream::Write append remaining {} of {} bytes of current buffer of size {}.\n", BytesToAppend.size(), BytesToWrite.size(), std::ranges::size(Buffer));
+		std::ranges::copy(BytesToAppend, std::back_inserter(Buffer));
+		return std::ranges::size(Buffer);
 	}
 
+	const auto NewPosition = std::ranges::distance(std::ranges::begin(Buffer), CurrentPositionIterator);
+	fmt::print("InMemoryOutStream::Write move position from {} to {}.\n", Position, NewPosition);
+	return NewPosition;
+}
+
+
+Z7_COM7F_IMF(InMemoryOutStream::Write(const void* data, UInt32 size, UInt32* processedSize))
+{
+	const auto BytesToWrite = std::span{ static_cast<const std::byte*>(data), static_cast<size_t>(size) };
+	Position = ::writeBytesToBuffer(*Data, Position, BytesToWrite);
 	if (processedSize)
 		*processedSize = size;
 	return S_OK;

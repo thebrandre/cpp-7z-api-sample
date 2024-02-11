@@ -24,7 +24,7 @@ InMemoryArchiveUpdateCallback::~InMemoryArchiveUpdateCallback()
 	fmt::print("Cleanup InMemoryArchiveUpdateCallback");
 }
 
-InMemoryArchiveUpdateCallback::InMemoryArchiveUpdateCallback(InMemoryArchive* Archive) : Archive(Archive) //, Password(u8"1234")
+InMemoryArchiveUpdateCallback::InMemoryArchiveUpdateCallback(InMemoryArchive* Archive) : Archive(Archive)
 {}
 
 Z7_COM7F_IMF(InMemoryArchiveUpdateCallback::SetTotal(UInt64 size))
@@ -157,12 +157,13 @@ Z7_COM7F_IMF(InMemoryArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISeque
 Z7_COM7F_IMF(InMemoryArchiveUpdateCallback::CryptoGetTextPassword2(Int32* passwordIsDefined, BSTR* password))
 {
 	fmt::print("InMemoryArchiveUpdateCallback::CryptoGetTextPassword2()\n");
-	if (!Password.empty())
+	const bool PasswordIsDefined = !Archive->Password.empty();
+	if (PasswordIsDefined && password != nullptr)
 	{
-		const auto PasswordW = boost::nowide::widen(Password);
+		const auto PasswordW = boost::nowide::widen(Archive->Password);
 		*password = ::SysAllocStringLen(PasswordW.c_str(), PasswordW.size());
-		*passwordIsDefined = 1;
 	}
-	*passwordIsDefined = 0;
+	if (passwordIsDefined)
+		*passwordIsDefined = PasswordIsDefined;
 	return S_OK;
 }

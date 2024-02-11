@@ -26,5 +26,4 @@ public:
 
 private:
 	InMemoryArchive* Archive{};
-	std::u8string Password;
 };

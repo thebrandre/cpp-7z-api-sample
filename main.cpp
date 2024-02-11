@@ -22,8 +22,8 @@ size_t getUncompressedSizeOfFile(IInArchive* Archive, UInt32 Index)
 	Archive->GetProperty(Index, kpidSize, &prop);
 	if (prop.vt == VT_UI8)
 		return prop.uhVal.QuadPart;
-	
-    throw std::runtime_error("");
+
+	throw std::runtime_error("");
 }
 
 std::string getFileName(IInArchive* Archive, UInt32 Index)
@@ -34,7 +34,7 @@ std::string getFileName(IInArchive* Archive, UInt32 Index)
 		return boost::nowide::narrow(prop.bstrVal);
 	else if (prop.vt != VT_EMPTY)
 		return std::to_string(prop.vt);
-    return {};
+	return {};
 }
 
 
@@ -44,7 +44,7 @@ void extractStuff(ArchiveFactory& Factory)
 
 	CMyComPtr<IInArchive> Archive = Factory.createIInArchive();
 	CMyComPtr<IArchiveOpenCallback> OpenCallback(new InMemoryArchiveOpenCallback(u8"Password"));
-	CMyComPtr<IInStream> InMemoryInStreamCallback (new StdFileInStream(TestArchive));
+	CMyComPtr<IInStream> InMemoryInStreamCallback(new StdFileInStream(TestArchive));
 
 	const UInt64 scanSize = 1 << 23;
 	if (const auto OpenResult = Archive->Open(InMemoryInStreamCallback, &scanSize, OpenCallback); OpenResult != S_OK)
@@ -73,16 +73,17 @@ void compressStuff(ArchiveFactory& Factory)
 {
 	CMyComPtr<IOutArchive> OutArchive = Factory.createIOutArchive();
 	InMemoryArchive TempArchive;
-	unsigned char FileContent[] = "ASCII";
-	const std::span<std::byte> FileContentView{ (std::byte*)FileContent, std::size(FileContent)-1 };
+	TempArchive.Password = u8"Password";
+	unsigned char FileContent[] = "ASCII and stuff";
+	const std::span<std::byte> FileContentView{ (std::byte*)FileContent, std::size(FileContent) - 1 };
 	TempArchive.FileSystem.createFile(u8"SomeFile.txt", FileContentView);
 
 	auto UpdateCallback = TempArchive.getUpdateCallback();
 	std::vector<std::byte> Buffer;
-	CMyComPtr<ISequentialOutStream> InMemoryOutStreamInstance (new InMemoryOutStream(Buffer));
+	CMyComPtr<ISequentialOutStream> InMemoryOutStreamInstance(new InMemoryOutStream(Buffer));
 	OutArchive->UpdateItems(InMemoryOutStreamInstance, 1, UpdateCallback);
 
-	std::ofstream OutFile("generatedArchive.7z",std::ios_base::trunc| std::ios_base::binary);
+	std::ofstream OutFile("generatedArchive.7z", std::ios_base::trunc | std::ios_base::binary);
 	OutFile.write((const char*)Buffer.data(), Buffer.size());
 }
 

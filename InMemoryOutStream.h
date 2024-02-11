@@ -20,5 +20,5 @@ public:
 
 private:
 	std::vector<std::byte>* Data;
-	size_t Position{};
+	std::size_t Position{};
 };

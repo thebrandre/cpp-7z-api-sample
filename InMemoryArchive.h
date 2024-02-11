@@ -10,4 +10,5 @@ public:
 	InMemoryArchive();
 
 	InMemoryFileSystem FileSystem;
+	std::u8string Password;
 };
