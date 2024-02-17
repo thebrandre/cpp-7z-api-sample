@@ -40,9 +40,10 @@ std::string getFileName(IInArchive* Archive, UInt32 Index)
 
 void extractStuff(ArchiveFactory& Factory)
 {
+	const unsigned ArchiveFormatId = 0x07;
 	std::filesystem::path TestArchive("./Archive-Password2.7z");
 
-	CMyComPtr<IInArchive> Archive = Factory.createIInArchive();
+	CMyComPtr<IInArchive> Archive = Factory.createInArchive(ArchiveFormatId);
 	CMyComPtr<IArchiveOpenCallback> OpenCallback(new InMemoryArchiveOpenCallback(u8"Password"));
 	CMyComPtr<IInStream> InMemoryInStreamCallback(new StdFileInStream(TestArchive));
 
@@ -71,7 +72,8 @@ void extractStuff(ArchiveFactory& Factory)
 
 void compressStuff(ArchiveFactory& Factory)
 {
-	CMyComPtr<IOutArchive> OutArchive = Factory.createIOutArchive();
+	const unsigned ArchiveFormatId = 0x07;
+	CMyComPtr<IOutArchive> OutArchive = Factory.createOutArchive(ArchiveFormatId);
 	InMemoryArchive TempArchive;
 	TempArchive.Password = u8"Password";
 	unsigned char FileContent[] = "ASCII and stuff";
@@ -83,7 +85,7 @@ void compressStuff(ArchiveFactory& Factory)
 	CMyComPtr<ISequentialOutStream> InMemoryOutStreamInstance(new InMemoryOutStream(Buffer));
 	OutArchive->UpdateItems(InMemoryOutStreamInstance, 1, UpdateCallback);
 
-	std::ofstream OutFile("generatedArchive.7z", std::ios_base::trunc | std::ios_base::binary);
+	std::ofstream OutFile(fmt::format("generatedArchive.{}", ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId)), std::ios_base::trunc | std::ios_base::binary);
 	OutFile.write((const char*)Buffer.data(), Buffer.size());
 }
 

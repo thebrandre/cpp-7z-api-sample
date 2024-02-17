@@ -1,11 +1,13 @@
 
 
 #pragma once
-#include "7zip/Archive/IArchive.h"
-#include "Common/MyCom.h"
+#include <7zip/Archive/IArchive.h>
+#include <Common/MyCom.h>
+
 
 class ArchiveFactory{
 public:
+
 	ArchiveFactory();
 	ArchiveFactory(const ArchiveFactory&) = delete;
 	ArchiveFactory(ArchiveFactory&&) noexcept = delete;
@@ -13,9 +15,10 @@ public:
 	ArchiveFactory& operator=(ArchiveFactory&&) noexcept = delete;
 	~ArchiveFactory();
 
-	CMyComPtr<IInArchive> createIInArchive();
-	CMyComPtr<IOutArchive> createIOutArchive();
+	auto createInArchive(unsigned FormatId = 7) const -> IInArchive*;
+	auto createOutArchive(unsigned FormatId = 7) const -> IOutArchive*;
 
+	static auto getFileExtensionFromFormatId(unsigned FormatId = 7) -> const char*;
 
 private:
 	HMODULE Handle7zipDLL;
