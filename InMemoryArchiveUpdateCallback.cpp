@@ -80,13 +80,20 @@ Z7_COM7F_IMF(InMemoryArchiveUpdateCallback::GetProperty(UInt32 index, PROPID pro
 		value->vt = VT_UI4;
 		value->ulVal = IsDirectory ? FILE_ATTRIBUTE_DIRECTORY : 0;
 		break;
+	case kpidCTime:
 	case kpidMTime:
 	{
 		const auto ModifiedTime = Archive->FileSystem.getModifiedTime(index);
 		const auto FileTime64 = getFileTimeFromUnixTime(std::chrono::duration_cast<std::chrono::seconds>(ModifiedTime.time_since_epoch()).count());
 		value->vt = VT_FILETIME;
+		value->filetime = {};
 		value->filetime.dwLowDateTime = (DWORD)FileTime64;
 		value->filetime.dwHighDateTime = (DWORD)(FileTime64 >> 32);
+
+		//FILETIME Filetime;
+		//GetSystemTimeAsFileTime(&Filetime);
+		//value->vt = VT_FILETIME;
+		//value->filetime = Filetime;
 		break;
 	}
 	case kpidHardLink:
@@ -112,7 +119,6 @@ Z7_COM7F_IMF(InMemoryArchiveUpdateCallback::GetProperty(UInt32 index, PROPID pro
 		value->vt = VT_UI8;
 		value->uhVal.QuadPart = Archive->FileSystem.getFileSize(index);
 		break;
-	case kpidCTime:  break;
 	case kpidATime:  break;
 	case kpidPosixAttrib:  break;
 	}

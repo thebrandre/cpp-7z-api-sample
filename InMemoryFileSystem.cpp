@@ -45,7 +45,7 @@ InMemoryFile InMemoryFileSystem::createFile(PathType Path, FileView BinaryConten
 	NewFile.Path = Path;
 	NewFile.Hash = Hash;
 	BlobStorage.emplace(Hash, FileType{ std::ranges::begin(BinaryContent) , std::ranges::end(BinaryContent) });
-	ModifiedTime = std::chrono::system_clock::now();
+	ModifiedTime = std::chrono::utc_clock::now();
 	return NewFile;
 }
 

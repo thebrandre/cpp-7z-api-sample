@@ -39,7 +39,7 @@ public:
 	using PathView = InMemoryFile::PathView;
 	using HashType = InMemoryFile::HashType;
 	using FileView = std::span<const std::byte>;
-	using TimePointType = std::chrono::time_point<std::chrono::system_clock>;
+	using TimePointType = std::chrono::time_point<std::chrono::utc_clock>;
 
 	InMemoryFile createFile(PathType Path, FileView BinaryContent);
 	std::uint64_t getFileSize(size_t Index) const noexcept;
