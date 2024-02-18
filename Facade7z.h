@@ -5,15 +5,15 @@
 
 #include "ArchiveProperties.h"
 
-class ArchiveFactory{
+class Facade7z{
 public:
 
-	ArchiveFactory();
-	ArchiveFactory(const ArchiveFactory&) = delete;
-	ArchiveFactory(ArchiveFactory&&) noexcept = delete;
-	ArchiveFactory& operator=(const ArchiveFactory&) = delete;
-	ArchiveFactory& operator=(ArchiveFactory&&) noexcept = delete;
-	~ArchiveFactory();
+	Facade7z();
+	Facade7z(const Facade7z&) = delete;
+	Facade7z(Facade7z&&) noexcept = delete;
+	Facade7z& operator=(const Facade7z&) = delete;
+	Facade7z& operator=(Facade7z&&) noexcept = delete;
+	~Facade7z();
 
 	auto createInArchive(unsigned FormatId = 7) const -> IInArchive*;
 	auto createOutArchive(unsigned FormatId = 7) const -> IOutArchive*;

@@ -1,7 +1,7 @@
 ﻿#include <cassert>
 #include <ranges>
 
-#include "ArchiveFactory.h"
+#include "Facade7z.h"
 #include "ArchiveProperties.h"
 #include <Shlwapi.h>
 #include <7zip/ICoder.h>
@@ -42,7 +42,7 @@ std::string getFileName(IInArchive* Archive, UInt32 Index)
 }
 
 
-void extractStuff(ArchiveFactory& Factory)
+void extractStuff(Facade7z& Factory)
 {
 	const unsigned ArchiveFormatId = 0x07;
 	//std::filesystem::path TestArchive("./Archive-Password2.7z");
@@ -83,7 +83,7 @@ void extractStuff(ArchiveFactory& Factory)
 	Archive->Extract(&ItemIndex, 1, false, ExtractCallback);
 }
 
-void compressStuff(ArchiveFactory& Factory)
+void compressStuff(Facade7z& Factory)
 {
 	const unsigned ArchiveFormatId = 0x07;
 	CMyComPtr<IOutArchive> OutArchive = Factory.createOutArchive(ArchiveFormatId);
@@ -111,7 +111,7 @@ void compressStuff(ArchiveFactory& Factory)
 	{
 		for (const int GeneratedArchiveIndex : std::views::iota(1, 100))
 		{
-			const std::filesystem::path Candidate = std::filesystem::current_path() / fmt::format("generatedArchive_{}.{}", GeneratedArchiveIndex, ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId));
+			const std::filesystem::path Candidate = std::filesystem::current_path() / fmt::format("generatedArchive_{}.{}", GeneratedArchiveIndex, Facade7z::getFileExtensionFromFormatId(ArchiveFormatId));
 			if (!std::filesystem::exists(Candidate))
 				return Candidate;
 		}
@@ -122,7 +122,7 @@ void compressStuff(ArchiveFactory& Factory)
 	OutFile.write(reinterpret_cast<const char*>(Buffer.data()), Buffer.size());
 }
 
-void hashStuff(ArchiveFactory& Factory)
+void hashStuff(Facade7z& Factory)
 {
 	CMyComPtr<IHasher> Hasher = Factory.createHasher("SHA256");
 	Hasher->Init();
@@ -137,7 +137,7 @@ void hashStuff(ArchiveFactory& Factory)
 int main()
 {
 	fmt::print("Running in directory {}.\n", std::filesystem::current_path());  
-	ArchiveFactory Factory;
+	Facade7z Factory;
 	fmt::print("7zip DLL version {}.{}.\n", Factory.getMajorVersion(), Factory.getMinorVersion());
 	fmt::print("Number of supported formats {}.\n", Factory.getNumberOfFormats());
 	extractStuff(Factory);

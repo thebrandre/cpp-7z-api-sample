@@ -1,4 +1,4 @@
-#include "ArchiveFactory.h"
+#include "Facade7z.h"
 #include "ExportGUID.h"
 #include <boost/nowide/convert.hpp>
 #include <fmt/format.h>
@@ -39,7 +39,7 @@ static auto getArchiveClassIdFromFormatId(unsigned f_formatId) -> const GUID*
 }
 
 
-ArchiveFactory::ArchiveFactory()
+Facade7z::Facade7z()
 {
 	Handle7zipDLL = LoadLibraryW(L"7zip.dll");
 	if (!Handle7zipDLL)
@@ -81,12 +81,12 @@ ArchiveFactory::ArchiveFactory()
 	}
 }
 
-ArchiveFactory::~ArchiveFactory()
+Facade7z::~Facade7z()
 {
 	FreeLibrary(Handle7zipDLL);
 }
 
-auto ArchiveFactory::createInArchive(unsigned FormatId) const -> IInArchive*
+auto Facade7z::createInArchive(unsigned FormatId) const -> IInArchive*
 {
 	const auto ArchiveClassGuid = ::getArchiveClassIdFromFormatId(FormatId);
 	if (ArchiveClassGuid == nullptr)
@@ -99,7 +99,7 @@ auto ArchiveFactory::createInArchive(unsigned FormatId) const -> IInArchive*
 	return static_cast<IInArchive*>(Archive);
 }
 
-auto ArchiveFactory::createOutArchive(unsigned FormatId) const -> IOutArchive*
+auto Facade7z::createOutArchive(unsigned FormatId) const -> IOutArchive*
 {
 	const auto ArchiveClassGuid = ::getArchiveClassIdFromFormatId(FormatId);
 	if (ArchiveClassGuid == nullptr)
@@ -112,7 +112,7 @@ auto ArchiveFactory::createOutArchive(unsigned FormatId) const -> IOutArchive*
 	return static_cast<IOutArchive*>(Archive);
 }
 
-auto ArchiveFactory::createHasher(std::string_view Name) const -> IHasher*
+auto Facade7z::createHasher(std::string_view Name) const -> IHasher*
 {
 	CMyComPtr<IHashers> Hashers{};
 	if (Functions.GetHashers(&Hashers) != S_OK) [[unlikely]]
@@ -145,7 +145,7 @@ auto ArchiveFactory::createHasher(std::string_view Name) const -> IHasher*
 	return Hasher;
 }
 
-auto ArchiveFactory::getFileExtensionFromFormatId(unsigned FormatId) -> const char*
+auto Facade7z::getFileExtensionFromFormatId(unsigned FormatId) -> const char*
 {
 	switch (FormatId)
 	{
@@ -170,7 +170,7 @@ auto ArchiveFactory::getFileExtensionFromFormatId(unsigned FormatId) -> const ch
 	}
 }
 
-unsigned ArchiveFactory::getNumberOfFormats() const
+unsigned Facade7z::getNumberOfFormats() const
 {
 	UInt32 NumberOfFormats{};
 	if (Functions.GetNumberOfFormats(&NumberOfFormats) != S_OK) [[unlikely]]
@@ -178,12 +178,12 @@ unsigned ArchiveFactory::getNumberOfFormats() const
 	return NumberOfFormats;
 }
 
-std::uint32_t ArchiveFactory::getMajorVersion() const
+std::uint32_t Facade7z::getMajorVersion() const
 {
 	return Version >> 16;
 }
 
-std::uint32_t ArchiveFactory::getMinorVersion() const
+std::uint32_t Facade7z::getMinorVersion() const
 {
 	return Version & 0xFFFFu;
 }
