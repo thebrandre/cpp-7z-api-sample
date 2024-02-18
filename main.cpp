@@ -1,4 +1,5 @@
-﻿#include <ranges>
+﻿#include <cassert>
+#include <ranges>
 
 #include "ArchiveFactory.h"
 #include "ArchiveProperties.h"
@@ -44,7 +45,8 @@ std::string getFileName(IInArchive* Archive, UInt32 Index)
 void extractStuff(ArchiveFactory& Factory)
 {
 	const unsigned ArchiveFormatId = 0x07;
-	std::filesystem::path TestArchive("./Archive-Password2.7z");
+	//std::filesystem::path TestArchive("./Archive-Password2.7z");
+	std::filesystem::path TestArchive("./Archive.7z");
 
 	CMyComPtr<IInArchive> Archive = Factory.createInArchive(ArchiveFormatId);
 	CMyComPtr<IArchiveOpenCallback> OpenCallback(new InMemoryArchiveOpenCallback(u8"Password"));
@@ -59,6 +61,14 @@ void extractStuff(ArchiveFactory& Factory)
 			fmt::print("Open of {0} failed. Password not defined?\n", TestArchive);
 		else fmt::print("Open of {0} failed with error code {1:#x} ({1}).\n", TestArchive, *reinterpret_cast<const unsigned*>(&OpenResult));
 	}
+
+	PROPVARIANT Method{};
+	Archive->GetArchiveProperty(kpidMethod, &Method);
+	if (Method.vt == VT_BSTR)
+	{
+		fmt::print("Method: {}\n", boost::nowide::narrow(Method.bstrVal));
+	}
+
 
 	UInt32 numItems = 0;
 	Archive->GetNumberOfItems(&numItems);
@@ -112,12 +122,25 @@ void compressStuff(ArchiveFactory& Factory)
 	OutFile.write(reinterpret_cast<const char*>(Buffer.data()), Buffer.size());
 }
 
+void hashStuff(ArchiveFactory& Factory)
+{
+	CMyComPtr<IHasher> Hasher = Factory.createHasher("SHA256");
+	Hasher->Init();
+	const char* TestValue = "Test";
+	Hasher->Update(TestValue, std::strlen(TestValue));
+	std::array<std::byte, 32> Hash;
+	Hasher->Final(reinterpret_cast<Byte*>(Hash.data()));
+	assert("532eaabd9574880dbf76b9b8cc00832c20a6ec113d682299550d7a6e0f345e25", fmt::format("{:0>2x}", fmt::join(Hash, "")));
+	fmt::print("SHA256 of {}: {:0>2x}\n", TestValue, fmt::join(Hash, ""));
+}
+
 int main()
 {
 	fmt::print("Running in directory {}.\n", std::filesystem::current_path());
 	ArchiveFactory Factory;
 	fmt::print("Number of supported formats {}.\n", Factory.getNumberOfFormats());
-	//extractStuff(Factory);
-	compressStuff(Factory);
+	extractStuff(Factory);
+	//compressStuff(Factory);
+	hashStuff(Factory);
 	return 0;
 }

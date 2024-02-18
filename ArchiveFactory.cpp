@@ -1,9 +1,10 @@
 #include "ArchiveFactory.h"
 #include "ExportGUID.h"
+#include <boost/nowide/convert.hpp>
+#include <fmt/format.h>
 #include <stdexcept>
 #include <string>
-
-#include "fmt/format.h"
+#include <cassert>
 
 class ArchiveException : public std::runtime_error
 {
@@ -84,6 +85,42 @@ auto ArchiveFactory::createOutArchive(unsigned FormatId) const -> IOutArchive*
 		throw ArchiveException(fmt::format("Unable to create read archive with format ID {}!", FormatId));
 
 	return static_cast<IOutArchive*>(Archive);
+}
+
+auto ArchiveFactory::createHasher(std::string_view Name) const -> IHasher*
+{
+	Func_GetHashers GetHashers = Z7_GET_PROC_ADDRESS(Func_GetHashers, Handle7zipDLL, "GetHashers");
+	if (GetHashers == nullptr)
+		throw ArchiveException("GetHashers not found!");
+
+	CMyComPtr<IHashers> Hashers{};
+	GetHashers(&Hashers);
+	UInt32 NumberOfHashers = Hashers->GetNumHashers();
+
+	UInt32 HasherIndex = NumberOfHashers;
+	for (UInt32 i = 0; i < NumberOfHashers; ++i)
+	{
+		PROPVARIANT HasherProp{};
+		PropVariantClear(&HasherProp);
+		Hashers->GetHasherProp(i, NMethodPropID::kName, &HasherProp);
+		assert(HasherProp.vt == VT_BSTR);
+		const auto HasherName = boost::nowide::narrow(HasherProp.bstrVal);
+		PropVariantClear(&HasherProp);
+		Hashers->GetHasherProp(i, NMethodPropID::kDigestSize, &HasherProp);
+		assert(HasherProp.vt == VT_UI4);
+		std::uint32_t DigestSize = HasherProp.ulVal;
+		fmt::print("Hash method {} with digest size {} at index {}.\n", HasherName, DigestSize, i);
+		if (Name == HasherName)
+			HasherIndex = i;
+	}
+	if (HasherIndex == NumberOfHashers)
+		throw ArchiveException(fmt::format("No Hasher called '{}' found!", Name));
+
+	IHasher* Hasher{};
+	Hashers->CreateHasher(HasherIndex, &Hasher);
+	if (Hasher == nullptr)
+		throw ArchiveException(fmt::format("Unable to create hasher '{}' with index {}!", Name, HasherIndex));
+	return Hasher;
 }
 
 auto ArchiveFactory::getFileExtensionFromFormatId(unsigned FormatId) -> const char*
