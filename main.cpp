@@ -136,8 +136,9 @@ void hashStuff(ArchiveFactory& Factory)
 
 int main()
 {
-	fmt::print("Running in directory {}.\n", std::filesystem::current_path());
+	fmt::print("Running in directory {}.\n", std::filesystem::current_path());  
 	ArchiveFactory Factory;
+	fmt::print("7zip DLL version {}.{}.\n", Factory.getMajorVersion(), Factory.getMinorVersion());
 	fmt::print("Number of supported formats {}.\n", Factory.getNumberOfFormats());
 	extractStuff(Factory);
 	//compressStuff(Factory);

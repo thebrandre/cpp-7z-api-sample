@@ -45,15 +45,40 @@ ArchiveFactory::ArchiveFactory()
 	if (!Handle7zipDLL)
 		throw ArchiveException("7zip DLL not loaded");
 
-	CreateObject = Z7_GET_PROC_ADDRESS(Func_CreateObject, Handle7zipDLL, "CreateObject");
+	const auto loadFunction = [&]<typename T_Func>(std::string_view f_name, T_Func& fr_functionPointer)
+	{
+		fr_functionPointer = Z7_GET_PROC_ADDRESS(T_Func, Handle7zipDLL, f_name.data());
+		if (!fr_functionPointer)
+			throw ArchiveException(fmt::format("{} not found in 7zip DLL", f_name));
+	};
 
-	if (!CreateObject)
-		throw ArchiveException("CreateObject not found");
+	loadFunction("CreateObject", Functions.CreateObject);
 
-	GetNumberOfFormats = Z7_GET_PROC_ADDRESS(Func_GetNumberOfFormats, Handle7zipDLL, "GetNumberOfFormats");
-	if (!GetNumberOfFormats)
-		throw ArchiveException("GetNumberOfFormats not found");
+	loadFunction("GetHandlerProperty", Functions.GetHandlerProperty);
+	loadFunction("GetNumberOfFormats", Functions.GetNumberOfFormats);
+	loadFunction("GetHandlerProperty2", Functions.GetHandlerProperty2);
+	loadFunction("GetIsArc", Functions.GetIsArc);
 
+	loadFunction("GetNumberOfMethods", Functions.GetNumberOfMethods);
+	loadFunction("GetMethodProperty", Functions.GetMethodProperty);
+	loadFunction("CreateDecoder", Functions.CreateDecoder);
+	loadFunction("CreateEncoder", Functions.CreateEncoder);
+	
+	loadFunction("GetHashers", Functions.GetHashers);
+	
+	loadFunction("SetCodecs", Functions.SetCodecs);
+
+	loadFunction("SetLargePageMode", Functions.SetLargePageMode);
+	loadFunction("SetCaseSensitive", Functions.SetCaseSensitive);
+
+	loadFunction("GetModuleProp", Functions.GetModuleProp);
+
+	{
+		PROPVARIANT l_versionProp{};
+		PropVariantClear(&l_versionProp);
+		if (Functions.GetModuleProp(NModulePropID::kVersion, &l_versionProp) == S_OK && l_versionProp.vt == VT_UI4)
+			Version = l_versionProp.ulVal;
+	}
 }
 
 ArchiveFactory::~ArchiveFactory()
@@ -68,7 +93,7 @@ auto ArchiveFactory::createInArchive(unsigned FormatId) const -> IInArchive*
 		throw ArchiveException(fmt::format("Format ID {} is not supported!", FormatId));
 
 	void* Archive{};
-	if (CreateObject(ArchiveClassGuid, &IID_IInArchive, &Archive) != S_OK)
+	if (Functions.CreateObject(ArchiveClassGuid, &IID_IInArchive, &Archive) != S_OK)
 		throw ArchiveException(fmt::format("Unable to create read archive with format ID {}!", FormatId));
 
 	return static_cast<IInArchive*>(Archive);
@@ -81,7 +106,7 @@ auto ArchiveFactory::createOutArchive(unsigned FormatId) const -> IOutArchive*
 		throw ArchiveException(fmt::format("Format ID {} is not supported!", FormatId));
 
 	void* Archive{};
-	if (CreateObject(ArchiveClassGuid, &IID_IOutArchive, &Archive) != S_OK)
+	if (Functions.CreateObject(ArchiveClassGuid, &IID_IOutArchive, &Archive) != S_OK) [[unlikely]]
 		throw ArchiveException(fmt::format("Unable to create read archive with format ID {}!", FormatId));
 
 	return static_cast<IOutArchive*>(Archive);
@@ -89,13 +114,10 @@ auto ArchiveFactory::createOutArchive(unsigned FormatId) const -> IOutArchive*
 
 auto ArchiveFactory::createHasher(std::string_view Name) const -> IHasher*
 {
-	Func_GetHashers GetHashers = Z7_GET_PROC_ADDRESS(Func_GetHashers, Handle7zipDLL, "GetHashers");
-	if (GetHashers == nullptr)
-		throw ArchiveException("GetHashers not found!");
-
 	CMyComPtr<IHashers> Hashers{};
-	GetHashers(&Hashers);
-	UInt32 NumberOfHashers = Hashers->GetNumHashers();
+	if (Functions.GetHashers(&Hashers) != S_OK) [[unlikely]]
+		throw ArchiveException("GetHashers failed!");
+	const UInt32 NumberOfHashers = Hashers->GetNumHashers();
 
 	UInt32 HasherIndex = NumberOfHashers;
 	for (UInt32 i = 0; i < NumberOfHashers; ++i)
@@ -151,6 +173,17 @@ auto ArchiveFactory::getFileExtensionFromFormatId(unsigned FormatId) -> const ch
 unsigned ArchiveFactory::getNumberOfFormats() const
 {
 	UInt32 NumberOfFormats{};
-	GetNumberOfFormats(&NumberOfFormats);
+	if (Functions.GetNumberOfFormats(&NumberOfFormats) != S_OK) [[unlikely]]
+		throw ArchiveException("GetNumberOfFormats failed!");
 	return NumberOfFormats;
+}
+
+std::uint32_t ArchiveFactory::getMajorVersion() const
+{
+	return Version >> 16;
+}
+
+std::uint32_t ArchiveFactory::getMinorVersion() const
+{
+	return Version & 0xFFFFu;
 }

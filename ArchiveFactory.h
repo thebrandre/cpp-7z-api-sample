@@ -21,9 +21,35 @@ public:
 
 	static auto getFileExtensionFromFormatId(unsigned FormatId = 7) -> const char*;
 	unsigned getNumberOfFormats() const;
+	std::uint32_t getMajorVersion() const;
+	std::uint32_t getMinorVersion() const;
 
 private:
+	struct FunctionTable
+	{
+		Func_CreateObject CreateObject{};
+
+		Func_GetHandlerProperty GetHandlerProperty{};
+		Func_GetNumberOfFormats GetNumberOfFormats{};
+		Func_GetHandlerProperty2 GetHandlerProperty2{};
+		Func_GetIsArc GetIsArc{};
+
+		Func_GetNumberOfMethods GetNumberOfMethods{};
+		Func_GetMethodProperty GetMethodProperty{};
+		Func_CreateDecoder CreateDecoder{};
+		Func_CreateEncoder CreateEncoder{};
+
+		Func_GetHashers GetHashers{};
+
+		Func_SetCodecs SetCodecs{};
+		
+		Func_SetLargePageMode SetLargePageMode{};
+		Func_SetCaseSensitive SetCaseSensitive{};
+
+		Func_GetModuleProp GetModuleProp{};
+	};
+
 	HMODULE Handle7zipDLL;
-	Func_CreateObject CreateObject;
-	Func_GetNumberOfFormats GetNumberOfFormats;
+	FunctionTable Functions;
+	std::uint32_t Version;
 };
