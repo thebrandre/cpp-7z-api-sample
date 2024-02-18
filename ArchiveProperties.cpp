@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <7zip/Archive/IArchive.h>
 
+#include "boost/nowide/convert.hpp"
+
 void Archive7zProperties::applyProperties(IUnknown* Archive)
 {
 	CMyComPtr<ISetProperties> SetProperties = [&]
@@ -48,22 +50,45 @@ Archive7zProperties& Archive7zProperties::set(HashSize Value)
 	return set(L"crc", Value.Value);
 }
 
-Archive7zProperties& Archive7zProperties::set(const wchar_t* Name, bool Value)
+Archive7zProperties& Archive7zProperties::set(Solid Value)
+{
+	return set(L"s", Value.Value);
+}
+
+Archive7zProperties& Archive7zProperties::set(SolidOptions Value)
+{
+	set(L"s", boost::nowide::widen(Value.Value));
+	return *this;
+}
+
+PROPVARIANT& Archive7zProperties::emplace_back(std::wstring_view Name)
 {
 	Properties.emplace_back(Name);
 	auto& PropValue = Values.emplace_back();
 	PropVariantClear(&PropValue);
+	return PropValue;
+}
+
+Archive7zProperties& Archive7zProperties::set(std::wstring_view Name, bool Value)
+{
+	auto& PropValue = emplace_back(Name);
 	PropValue.vt = VT_BOOL;
 	PropValue.boolVal = Value ? VARIANT_TRUE : VARIANT_FALSE;
 	return *this;
 }
 
-Archive7zProperties& Archive7zProperties::set(const wchar_t* Name, std::uint32_t Value)
+Archive7zProperties& Archive7zProperties::set(std::wstring_view Name, std::uint32_t Value)
 {
-	Properties.emplace_back(Name);
-	auto& PropValue = Values.emplace_back();
-	PropVariantClear(&PropValue);
+	auto& PropValue = emplace_back(Name);
 	PropValue.vt = VT_UI4;
 	PropValue.ulVal = Value;
+	return *this;
+}
+
+Archive7zProperties& Archive7zProperties::set(std::wstring_view Name, std::wstring_view Value)
+{
+	auto& PropValue = emplace_back(Name);
+	PropValue.vt = VT_BSTR;
+	PropValue.bstrVal = ::SysAllocStringLen(Value.data(), static_cast<UINT>(Value.size()));
 	return *this;
 }

@@ -75,8 +75,13 @@ void compressStuff(ArchiveFactory& Factory)
 {
 	const unsigned ArchiveFormatId = 0x07;
 	CMyComPtr<IOutArchive> OutArchive = Factory.createOutArchive(ArchiveFormatId);
-	Archive7zProperties::set(OutArchive, Archive7zProperties::EncryptHeaders{true}, Archive7zProperties::NumberOfThreads{1});
-	
+	Archive7zProperties::set(OutArchive,
+		//Archive7zProperties::EncryptHeaders{ true },
+		Archive7zProperties::NumberOfThreads{ 1 },
+		Archive7zProperties::SolidOptions{ u8"e2g" }
+		//Archive7zProperties::Solid{ true }
+	);
+
 	InMemoryArchive TempArchive;
 	TempArchive.Password = u8"Password";
 	unsigned char FileContent[] = "ASCII and stuff";
