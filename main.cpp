@@ -1,4 +1,6 @@
-﻿#include "ArchiveFactory.h"
+﻿#include <ranges>
+
+#include "ArchiveFactory.h"
 #include "ArchiveProperties.h"
 #include <Shlwapi.h>
 #include <7zip/ICoder.h>
@@ -95,10 +97,19 @@ void compressStuff(ArchiveFactory& Factory)
 
 
 	// dump buffer to file
-	std::filesystem::path OutFileName = std::filesystem::current_path() / fmt::format("generatedArchive.{}", ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId));
-	if (std::filesystem::exists(OutFileName)) { std::filesystem::remove(OutFileName); }
+	const auto OutFileName = [&]()-> std::filesystem::path
+	{
+		for (const int GeneratedArchiveIndex : std::views::iota(1, 100))
+		{
+			const std::filesystem::path Candidate = std::filesystem::current_path() / fmt::format("generatedArchive_{}.{}", GeneratedArchiveIndex, ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId));
+			if (!std::filesystem::exists(Candidate))
+				return Candidate;
+		}
+		throw std::runtime_error("Please delete some of the generated files!");
+	}();
+	fmt::print("Generated archive {}.\n", OutFileName);
 	std::ofstream OutFile(OutFileName, std::ios_base::trunc | std::ios_base::binary);
-	OutFile.write((const char*)Buffer.data(), Buffer.size());
+	OutFile.write(reinterpret_cast<const char*>(Buffer.data()), Buffer.size());
 }
 
 int main()
