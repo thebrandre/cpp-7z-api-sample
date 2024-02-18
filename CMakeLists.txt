@@ -27,6 +27,8 @@ target_sources(7zip-examples
 	"InMemoryArchiveUpdateCallback.cpp"
 	"ArchiveFactory.h"
 	"ArchiveFactory.cpp"
+	"ArchiveProperties.h"
+	"ArchiveProperties.cpp"
 	"ExportGUID.cpp"
 	"ExportGUID.h"
 	"InMemoryArchiveOpenCallback.cpp"

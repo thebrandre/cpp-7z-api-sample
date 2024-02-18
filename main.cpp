@@ -1,4 +1,5 @@
 ﻿#include "ArchiveFactory.h"
+#include "ArchiveProperties.h"
 #include <Shlwapi.h>
 #include <7zip/ICoder.h>
 #include <7zip/IPassword.h>
@@ -74,6 +75,8 @@ void compressStuff(ArchiveFactory& Factory)
 {
 	const unsigned ArchiveFormatId = 0x07;
 	CMyComPtr<IOutArchive> OutArchive = Factory.createOutArchive(ArchiveFormatId);
+	Archive7zProperties::set(OutArchive, Archive7zProperties::EncryptHeaders{true}, Archive7zProperties::NumberOfThreads{1});
+	
 	InMemoryArchive TempArchive;
 	TempArchive.Password = u8"Password";
 	unsigned char FileContent[] = "ASCII and stuff";
@@ -85,7 +88,11 @@ void compressStuff(ArchiveFactory& Factory)
 	CMyComPtr<ISequentialOutStream> InMemoryOutStreamInstance(new InMemoryOutStream(Buffer));
 	OutArchive->UpdateItems(InMemoryOutStreamInstance, 1, UpdateCallback);
 
-	std::ofstream OutFile(fmt::format("generatedArchive.{}", ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId)), std::ios_base::trunc | std::ios_base::binary);
+
+	// dump buffer to file
+	std::filesystem::path OutFileName = std::filesystem::current_path() / fmt::format("generatedArchive.{}", ArchiveFactory::getFileExtensionFromFormatId(ArchiveFormatId));
+	if (std::filesystem::exists(OutFileName)) { std::filesystem::remove(OutFileName); }
+	std::ofstream OutFile(OutFileName, std::ios_base::trunc | std::ios_base::binary);
 	OutFile.write((const char*)Buffer.data(), Buffer.size());
 }
 
@@ -93,6 +100,7 @@ int main()
 {
 	fmt::print("Running in directory {}.\n", std::filesystem::current_path());
 	ArchiveFactory Factory;
+	fmt::print("Number of supported formats {}.\n", Factory.getNumberOfFormats());
 	//extractStuff(Factory);
 	compressStuff(Factory);
 	return 0;
