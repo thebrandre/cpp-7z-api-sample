@@ -1,5 +1,3 @@
-
-
 #pragma once
 #include <7zip/Archive/IArchive.h>
 #include <Common/MyCom.h>
@@ -19,9 +17,10 @@ public:
 	auto createOutArchive(unsigned FormatId = 7) const -> IOutArchive*;
 
 	static auto getFileExtensionFromFormatId(unsigned FormatId = 7) -> const char*;
+	unsigned getNumberOfFormats() const;
 
 private:
 	HMODULE Handle7zipDLL;
 	Func_CreateObject CreateObject;
+	Func_GetNumberOfFormats GetNumberOfFormats;
 };
-

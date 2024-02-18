@@ -49,6 +49,10 @@ ArchiveFactory::ArchiveFactory()
 	if (!CreateObject)
 		throw ArchiveException("CreateObject not found");
 
+	GetNumberOfFormats = Z7_GET_PROC_ADDRESS(Func_GetNumberOfFormats, Handle7zipDLL, "GetNumberOfFormats");
+	if (!GetNumberOfFormats)
+		throw ArchiveException("GetNumberOfFormats not found");
+
 }
 
 ArchiveFactory::~ArchiveFactory()
@@ -105,4 +109,11 @@ auto ArchiveFactory::getFileExtensionFromFormatId(unsigned FormatId) -> const ch
 	default:
 		return "";
 	}
+}
+
+unsigned ArchiveFactory::getNumberOfFormats() const
+{
+	UInt32 NumberOfFormats{};
+	GetNumberOfFormats(&NumberOfFormats);
+	return NumberOfFormats;
 }
