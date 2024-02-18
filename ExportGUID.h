@@ -1,5 +1,7 @@
 #pragma once
 
+#include <7zip/CPP/Common/MyWindows.h>
+
 #define DEFINE_GUID_ARC(name, id) Z7_DEFINE_GUID(name, \
   0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, id, 0x00, 0x00);
 
